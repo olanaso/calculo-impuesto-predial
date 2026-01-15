@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Maestra: Autovalúo e Impuesto Predial</title>
+    <style>
+        :root {
+            /* Colores Autovalúo */
+            --sky: #f0f9ff; --grass: #86efac;
+            --building: #fca5a5; --building-border: #be185d;
+            --extra: #c4b5fd; --extra-border: #7c3aed;
+            /* Colores Impuesto */
+            --tax-1: #3b82f6; --tax-2: #f59e0b; --tax-3: #ef4444;
+            --bg-main: #e5e7eb; --text: #374151;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, Roboto, sans-serif;
+            background: var(--bg-main); color: var(--text);
+            margin: 0; padding: 20px;
+        }
+
+        .main-wrapper { max-width: 1100px; margin: 0 auto; }
+        
+        /* Títulos de Sección */
+        .big-header {
+            background: #1e3a8a; color: white; padding: 15px; border-radius: 12px 12px 0 0;
+            text-align: center; font-size: 1.5rem; margin-top: 30px;
+        }
+        .big-header span { color: #fbbf24; font-weight: bold; }
+
+        /* Contenedores Principales */
+        .section-container {
+            background: white; padding: 25px; border-radius: 0 0 12px 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+
+        /* ================= PARTE 1: ESTILOS DEL AUTOVALÚO ================= */
+        .autovaluo-layout { display: grid; grid-template-columns: 350px 1fr; gap: 25px; }
+        @media(max-width: 800px) { .autovaluo-layout { grid-template-columns: 1fr; } }
+
+        /* Inputs */
+        .panel-inputs h3 { background: #eff6ff; color: #1e40af; padding: 8px; border-radius: 6px; margin-top: 15px; font-size: 1rem; border-left: 4px solid #3b82f6; }
+        input[type=number], input[type=text] { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; margin-bottom: 5px; }
+        .btn-add { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition:0.2s;}
+        .btn-piso { background: #ec4899; } .btn-piso:hover { background: #db2777; }
+        .btn-obra { background: #8b5cf6; } .btn-obra:hover { background: #7c3aed; }
+
+        /* Escenario Visual 2.5D */
+        .visual-scene {
+            background: linear-gradient(to bottom, var(--sky) 60%, #fff 100%);
+            border-radius: 12px; border: 3px solid #cbd5e1; height: 450px;
+            position: relative; overflow: hidden; display: flex; justify-content: center; align-items: flex-end; perspective: 800px;
+        }
+        /* Calle */
+        .street-zone { position: absolute; bottom: 0; width: 100%; height: 70px; background: #9ca3af; border-top: 6px solid #d1d5db; z-index: 20; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.9); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.5s; }
+        .street-tierra { background: #b45309; border-top-color: #d97706; }
+        .street-asfalto { background: #4b5563; background-image: linear-gradient(90deg, transparent 50%, rgba(255,255,255,0.5) 50%); background-size: 100px 100%; }
+        .street-avenida { background: #1f2937; border-top: 10px solid #fbbf24; }
+        .arancel-tag { background: #2563eb; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); }
+        /* Lote */
+        .lot-zone { position: absolute; bottom: 70px; width: 50%; height: 20px; background: var(--grass); border: 2px solid #16a34a; z-index: 10; transition: width 0.5s; display: flex; justify-content: center; }
+        .lot-label { position: absolute; bottom: -25px; font-size: 0.8rem; color: #065f46; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; }
+        /* Construcción */
+        .construction-area { position: absolute; bottom: 90px; display: flex; align-items: flex-end; gap: 10px; z-index: 15; }
+        .house-stack, .extras-stack { display: flex; flex-direction: column-reverse; align-items: center; }
+        .floor-block { width: 130px; height: 45px; background: var(--building); border: 2px solid var(--building-border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #881337; font-size: 0.8rem; margin-bottom: -2px; animation: popIn 0.3s; }
+        .roof { width: 150px; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 25px solid var(--building-border); margin-bottom: -2px; }
+        .extra-block { width: 80px; background: var(--extra); border: 2px solid var(--extra-border); padding: 4px; margin-bottom: 5px; border-radius: 4px; font-size: 0.7rem; text-align: center; color: #4c1d95; font-weight: bold; animation: slideIn 0.3s; }
+        
+        @keyframes popIn { from{transform: scale(0);} to{transform: scale(1);} }
+        @keyframes slideIn { from{transform: translateX(20px); opacity:0;} to{transform: translateX(0); opacity:1;} }
+
+        /* El Gran Total Autovalúo */
+        .big-connector-box {
+            background: #111827; color: white; padding: 20px; text-align: center; border-radius: 12px; margin: 20px 0; position: relative;
+        }
+        .big-connector-box h2 { margin: 0; font-size: 1.2rem; color: #9ca3af; }
+        .big-connector-total { font-size: 3rem; color: #fbbf24; font-weight: 800; display: block; margin: 10px 0; }
+        .connector-arrow { font-size: 2rem; color: #fbbf24; position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%); z-index: 5; animation: bounce 1s infinite alternate; }
+        @keyframes bounce { from {transform: translateX(-50%) translateY(0);} to {transform: translateX(-50%) translateY(10px);} }
+
+
+        /* ================= PARTE 2: ESTILOS DEL IMPUESTO ================= */
+        .tax-controls { background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #6b7280; display: flex; align-items: center; flex-wrap: wrap;}
+        
+        /* Contenedor de los Baldes/Tramos */
+        .buckets-container {
+            display: flex; gap: 20px; justify-content: space-around; margin-top: 30px; flex-wrap: wrap;
+        }
+        
+        /* Diseño del Balde */
+        .tax-bucket {
+            flex: 1; min-width: 280px; background: white; border: 3px solid #e5e7eb; border-radius: 12px; overflow: hidden; position: relative;
+            display: flex; flex-direction: column;
+        }
+        /* Cabecera del tramo */
+        .bucket-header { padding: 15px; text-align: center; font-weight: bold; color: white; }
+        .bh-1 { background: var(--tax-1); } .bh-2 { background: var(--tax-2); } .bh-3 { background: var(--tax-3); }
+        .bucket-rate { display: block; font-size: 1.6rem; margin-bottom: 5px;}
+        .bucket-limit-text { font-size: 0.85rem; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 10px; display: inline-block; margin-top: 5px;}
+
+        /* Cuerpo del balde (contenido) */
+        .bucket-body { padding: 20px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; background: #f9fafb; transition: all 0.5s;}
+        .bucket-base-text { font-size: 0.9rem; color: #666; margin-bottom: 5px; }
+        .bucket-base-amount { font-weight: bold; font-size: 1.3rem; color: #374151; margin-bottom: 15px; }
+        .bucket-result { padding-top: 15px; border-top: 2px dashed #ddd; }
+        .bucket-tax-amount { font-size: 1.5rem; font-weight: bold; }
+        .tax-c1 { color: var(--tax-1); } .tax-c2 { color: var(--tax-2); } .tax-c3 { color: var(--tax-3); }
+
+        /* Estado inactivo del balde */
+        .bucket-inactive { opacity: 0.4; filter: grayscale(0.5); }
+        .bucket-inactive .bucket-tax-amount { color: #999; }
+
+        /* Resultado Final Impuesto */
+        .final-tax-box {
+            background: #065f46; color: white; padding: 30px; text-align: center; border-radius: 16px; margin-top: 30px; box-shadow: 0 10px 20px -5px rgba(6, 95, 70, 0.4);
+        }
+        .final-tax-amount { font-size: 3.5rem; font-weight: 900; color: #86efac; display: block; }
+
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    
+    <div class="big-header">
+        PASO 1: Define tu Propiedad <span>(Autovalúo)</span>
+    </div>
+    <div class="section-container">
+        <p style="text-align: center; margin-bottom: 25px; color:#555;">Configura tu lote, calle y construcciones para calcular el valor fiscal.</p>
+        
+        <div class="autovaluo-layout">
+            <div class="panel-inputs">
+                <h3>1. Ubicación (Suelo y Calle)</h3>
+                <div style="display: flex; gap: 10px;">
+                    <div><label>Arancel (S/m²)</label><input type="number" id="inArancel" value="150" oninput="calcularMaestro()"></div>
+                    <div><label>Área Lote (m²)</label><input type="number" id="inAreaT" value="120" oninput="calcularMaestro()"></div>
+                </div>
+                
+                <h3>2. Construcción (Pisos)</h3>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="number" id="inAreaPiso" placeholder="m² Techado">
+                    <input type="number" id="inValorPiso" placeholder="Valor Unit. S/">
+                </div>
+                <button class="btn-add btn-piso" onclick="agregarPiso()">➕ Agregar Piso</button>
+
+                <h3>3. Obras Complementarias</h3>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="text" id="inDescObra" placeholder="Ej: Cerco, Tanque">
+                    <input type="number" id="inValorObra" placeholder="Valor Total S/">
+                </div>
+                <button class="btn-add btn-obra" onclick="agregarObra()">➕ Agregar Obra</button>
+
+                <div id="listaItems" style="margin-top:15px; font-size:0.85rem; max-height:100px; overflow-y:auto;"></div>
+            </div>
+
+            <div class="visual-scene">
+                <div class="construction-area">
+                    <div class="extras-stack" id="vStackExtras"></div>
+                    <div class="house-stack" id="vStackHouse"></div>
+                </div>
+                <div class="lot-zone" id="vLot"><div class="lot-label" id="vLotLabel">120 m²</div></div>
+                <div class="street-zone street-asfalto" id="vStreet">Calle / Jirón <div class="arancel-tag" id="vArancelTag">Arancel: S/ 150</div></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="big-connector-box">
+        <h2>VALOR TOTAL DE AUTOVALÚO</h2>
+        <span class="big-connector-total" id="granTotalAutovaluo">S/ 0.00</span>
+        <small>Este valor baja automáticamente a los tramos 👇</small>
+        <div class="connector-arrow">⬇️</div>
+    </div>
+
+
+    <div class="big-header" style="background: #065f46;">
+        PASO 2: Calcula el Impuesto <span>(Límites según UIT)</span>
+    </div>
+    <div class="section-container">
+        <div class="tax-controls">
+            <div style="flex:1;">
+                <label style="font-weight: bold; font-size: 1.1rem;">Valor de la UIT (Año fiscal):</label>
+                <input type="number" id="inUIT" value="5350" style="width: 120px; display:inline-block; margin-left: 10px; font-weight:bold; color:#1e3a8a;" oninput="calcularMaestro()">
+            </div>
+            <div style="font-size:0.9rem; color: #666; max-width: 400px;">
+                *Cambia la UIT y verás cómo cambian los límites de dinero en los recuadros de abajo. (Ref 2025: S/ 5,350)
+            </div>
+        </div>
+
+        <div class="buckets-container">
+            
+            <div class="tax-bucket" id="bucket1">
+                <div class="bucket-header bh-1">
+                    TRAMO 1 (Base)
+                    <span class="bucket-rate">0.2%</span>
+                    <span class="bucket-limit-text" id="lblLimite1">Hasta 15 UIT</span>
+                </div>
+                <div class="bucket-body">
+                    <div class="bucket-base-text">Monto de tu casa aquí:</div>
+                    <div class="bucket-base-amount" id="baseTramo1">S/ 0.00</div>
+                    <div class="bucket-result">
+                        <small>Impuesto Parcial:</small><br>
+                        <span class="bucket-tax-amount tax-c1" id="taxTramo1">S/ 0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tax-bucket bucket-inactive" id="bucket2">
+                <div class="bucket-header bh-2">
+                    TRAMO 2 (Medio)
+                    <span class="bucket-rate">0.6%</span>
+                    <span class="bucket-limit-text" id="lblLimite2">Hasta 60 UIT</span>
+                </div>
+                <div class="bucket-body">
+                    <div class="bucket-base-text">Monto excedente aquí:</div>
+                    <div class="bucket-base-amount" id="baseTramo2">S/ 0.00</div>
+                    <div class="bucket-result">
+                        <small>Impuesto Parcial:</small><br>
+                        <span class="bucket-tax-amount tax-c2" id="taxTramo2">S/ 0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tax-bucket bucket-inactive" id="bucket3">
+                <div class="bucket-header bh-3">
+                    TRAMO 3 (Alto)
+                    <span class="bucket-rate">1.0%</span>
+                    <span class="bucket-limit-text" id="lblLimite3">Más de 60 UIT</span>
+                </div>
+                <div class="bucket-body">
+                    <div class="bucket-base-text">Monto excedente aquí:</div>
+                    <div class="bucket-base-amount" id="baseTramo3">S/ 0.00</div>
+                    <div class="bucket-result">
+                        <small>Impuesto Parcial:</small><br>
+                        <span class="bucket-tax-amount tax-c3" id="taxTramo3">S/ 0.00</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="final-tax-box">
+            <h2 style="margin-top:0;">IMPUESTO PREDIAL ANUAL</h2>
+            <span class="final-tax-amount" id="granTotalImpuesto">S/ 0.00</span>
+            <small style="color: #86efac; display:block; margin-top:10px;">(Suma de los parciales calculados arriba)</small>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    // --- ESTADO GLOBAL ---
+    let pisos = [];
+    let obras = [];
+    let totalAutovaluoGlobal = 0; 
+
+    // Utilidad para formato moneda
+    const fmt = (n) => n.toLocaleString('es-PE', { style: 'currency', currency: 'PEN' });
+    // Utilidad para formato sin decimales (para los límites en titulos)
+    const fmtSimple = (n) => "S/ " + n.toLocaleString('es-PE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+
+    // =================================================================
+    // FUNCIÓN MAESTRA
+    // =================================================================
+    function calcularMaestro() {
+        // 1. CALCULAR AUTOVALÚO (Parte Superior)
+        const arancel = parseFloat(document.getElementById('inArancel').value) || 0;
+        const areaT = parseFloat(document.getElementById('inAreaT').value) || 0;
+        
+        const valTerreno = arancel * areaT;
+        const valEdif = pisos.reduce((s, x) => s + x.t, 0);
+        const valObras = obras.reduce((s, x) => s + x.v, 0);
+        
+        totalAutovaluoGlobal = valTerreno + valEdif + valObras;
+
+        // 2. ACTUALIZAR VISUALES SUPERIORES
+        actualizarEscenarioVisual(arancel, areaT, valTerreno);
+        document.getElementById('granTotalAutovaluo').innerText = fmt(totalAutovaluoGlobal);
+
+        // 3. CALCULAR IMPUESTO (Parte Inferior)
+        const uit = parseFloat(document.getElementById('inUIT').value) || 5350;
+        calcularImpuestoPredial(totalAutovaluoGlobal, uit);
+    }
+
+
+    // =================================================================
+    // LÓGICA PARTE 1: VISUALIZACIÓN DEL AUTOVALÚO
+    // =================================================================
+    function actualizarEscenarioVisual(arancel, areaT, valTerreno) {
+        // Calle
+        const vStreet = document.getElementById('vStreet');
+        document.getElementById('vArancelTag').innerText = `Arancel: S/ ${arancel}`;
+        if (arancel < 80) { vStreet.className = "street-zone street-tierra"; vStreet.firstChild.textContent = "Trocha / Pasaje"; } 
+        else if (arancel < 350) { vStreet.className = "street-zone street-asfalto"; vStreet.firstChild.textContent = "Calle / Jirón"; } 
+        else { vStreet.className = "street-zone street-avenida"; vStreet.firstChild.textContent = "Avenida Principal"; }
+
+        // Lote
+        const vLot = document.getElementById('vLot');
+        document.getElementById('vLotLabel').innerText = `${areaT}m² (S/ ${valTerreno.toLocaleString('es-PE')})`;
+        let anchoPct = 30 + (areaT / 8); if (anchoPct > 90) anchoPct = 90;
+        vLot.style.width = anchoPct + "%";
+    }
+
+    function renderizarConstrucciones() {
+        const hStack = document.getElementById('vStackHouse'); const eStack = document.getElementById('vStackExtras');
+        hStack.innerHTML = ''; eStack.innerHTML = '';
+        // Techo
+        if(pisos.length > 0) hStack.appendChild(document.createElement('div')).className = "roof";
+        // Pisos
+        pisos.forEach(p => {
+            const b = document.createElement('div'); b.className = "floor-block"; b.innerHTML = `Piso ${p.n}<br><small>${fmt(p.t)}</small>`;
+            hStack.appendChild(b);
+        });
+        // Obras
+        obras.forEach(o => {
+            const b = document.createElement('div'); b.className = "extra-block"; b.innerHTML = `${o.d}<br>${fmt(o.v)}`;
+            eStack.appendChild(b);
+        });
+        // Lista
+        const l = document.getElementById('listaItems'); l.innerHTML = '';
+        pisos.forEach(p => l.innerHTML += `<div>🏠 P${p.n}: ${fmt(p.t)} <span style="color:red;cursor:pointer" onclick="borrar('p',${p.id})">×</span></div>`);
+        obras.forEach(o => l.innerHTML += `<div style="color:#4c1d95;">🔨 ${o.d}: ${fmt(o.v)} <span style="color:red;cursor:pointer" onclick="borrar('o',${o.id})">×</span></div>`);
+        
+        calcularMaestro(); 
+    }
+    
+    function agregarPiso() {
+        const a = parseFloat(document.getElementById('inAreaPiso').value), v = parseFloat(document.getElementById('inValorPiso').value);
+        if(a&&v) { pisos.push({id:Date.now(), n:pisos.length+1, a:a, v:v, t:a*v}); document.getElementById('inAreaPiso').value=''; renderizarConstrucciones(); }
+    }
+    function agregarObra() {
+        const d = document.getElementById('inDescObra').value, v = parseFloat(document.getElementById('inValorObra').value);
+        if(d&&v) { obras.push({id:Date.now(), d:d, v:v}); document.getElementById('inDescObra').value=''; document.getElementById('inValorObra').value=''; renderizarConstrucciones(); }
+    }
+    function borrar(t,id) {
+        if(t==='p') pisos=pisos.filter(x=>x.id!==id); if(t==='o') obras=obras.filter(x=>x.id!==id);
+        pisos.forEach((p,i)=>p.n=i+1); renderizarConstrucciones();
+    }
+
+
+    // =================================================================
+    // LÓGICA PARTE 2: CÁLCULO DEL IMPUESTO (TRAMOS DINÁMICOS)
+    // =================================================================
+    function calcularImpuestoPredial(baseImponible, uit) {
+        // 1. CALCULAR LIMITES SEGUN UIT
+        const limite15UIT = 15 * uit; // Tope Tramo 1
+        const limite60UIT = 60 * uit; // Tope Tramo 2
+
+        // 2. ACTUALIZAR ETIQUETAS DE LOS TRAMOS (LO QUE PEDISTE)
+        document.getElementById('lblLimite1').innerText = `Hasta ${fmtSimple(limite15UIT)} (15 UIT)`;
+        document.getElementById('lblLimite2').innerText = `Hasta ${fmtSimple(limite60UIT)} (60 UIT)`;
+        document.getElementById('lblLimite3').innerText = `Mayor a ${fmtSimple(limite60UIT)}`;
+
+        // 3. CALCULO DE BALDES
+        let base1 = 0, base2 = 0, base3 = 0;
+        let tax1 = 0, tax2 = 0, tax3 = 0;
+
+        // Tramo 1: Hasta 15 UIT
+        if (baseImponible <= limite15UIT) {
+            base1 = baseImponible;
+        } else {
+            base1 = limite15UIT;
+        }
+        tax1 = base1 * 0.002;
+
+        // Tramo 2: Exceso de 15 hasta 60 UIT
+        if (baseImponible > limite15UIT) {
+            if (baseImponible <= limite60UIT) {
+                base2 = baseImponible - limite15UIT;
+            } else {
+                base2 = limite60UIT - limite15UIT; // El tramo completo (45 UIT)
+            }
+            tax2 = base2 * 0.006;
+        }
+
+        // Tramo 3: Exceso de 60 UIT
+        if (baseImponible > limite60UIT) {
+            base3 = baseImponible - limite60UIT;
+            tax3 = base3 * 0.01;
+        }
+
+        // 4. ACTUALIZAR VISUALES
+        // Balde 1
+        document.getElementById('baseTramo1').innerText = fmt(base1);
+        document.getElementById('taxTramo1').innerText = fmt(tax1);
+
+        // Balde 2
+        const b2 = document.getElementById('bucket2');
+        if(base2 > 0) { b2.classList.remove('bucket-inactive'); } else { b2.classList.add('bucket-inactive'); }
+        document.getElementById('baseTramo2').innerText = fmt(base2);
+        document.getElementById('taxTramo2').innerText = fmt(tax2);
+
+        // Balde 3
+        const b3 = document.getElementById('bucket3');
+        if(base3 > 0) { b3.classList.remove('bucket-inactive'); } else { b3.classList.add('bucket-inactive'); }
+        document.getElementById('baseTramo3').innerText = fmt(base3);
+        document.getElementById('taxTramo3').innerText = fmt(tax3);
+
+        // TOTAL FINAL
+        const granTotalImpuesto = tax1 + tax2 + tax3;
+        document.getElementById('granTotalImpuesto').innerText = fmt(granTotalImpuesto);
+    }
+
+    // Inicializar al cargar
+    calcularMaestro();
+
+</script>
+
+</body>
+</html>
